@@ -10,17 +10,16 @@ Este proyecto implementa el **Tiny Encryption Algorithm (TEA)** en un entorno **
 ├── Dockerfile
 ├── run.sh
 ├── tea-project/
-│ ├── build.sh # Script de compilación
-│ ├── run-qemu.sh # Script para ejecutar en QEMU con GDB
-│ ├── linker.ld # Script de linkeo
-│ ├── startup.s # Inicio y configuración mínima del stack
-│ ├── main.c # Lógica principal en C
-│ ├── uart.c # Implementación de UART
-│ ├── uart.h # Encabezado de UART
-│ ├── tea_encrypt.s # Cifrado TEA en ensamblador
-│ ├── tea_decrypt.s # Descifrado TEA en ensamblador
-│ └── README.md # Documentación
-
+│   ├── build.sh           # Script de compilación
+│   ├── run-qemu.sh        # Script para ejecutar en QEMU con GDB
+│   ├── linker.ld          # Script de linkeo
+│   ├── startup.s          # Inicio y configuración mínima del stack
+│   ├── main.c             # Lógica principal en C
+│   ├── uart.c             # Implementación de UART
+│   ├── uart.h             # Encabezado de UART
+│   ├── tea_encrypt.s      # Cifrado TEA en ensamblador
+│   ├── tea_decrypt.s      # Descifrado TEA en ensamblador
+│   └── README.md          # Documentación
 ```
 
 - **`main.c`**: lógica de pruebas, bloques, padding, llamadas a TEA.  
@@ -74,7 +73,7 @@ El software se organiza en dos capas:
 ## 4. Evidencias de ejecución en QEMU y GDB  
 
 ### Salida UART en QEMU  
-
+```
 ==============================
 Prueba 1 - Bloques originales:
 0x484F4C41 0x31323334
@@ -102,9 +101,10 @@ Prueba 2 - Bloques descifrados:
 0x45410000 0x00000000
 Prueba 2 - Mensaje final:
 Mensaje de prueba para TEA
+```
 
 ### Sesión de GDB  
-
+```
 $ gdb-multiarch tea.elf
 (gdb) target remote :1234
 Remote debugging using :1234
@@ -118,6 +118,7 @@ Breakpoint 1, main () at main.c:66
 66 uart_init();
 (gdb) layout asm
 (gdb) info registers
+```
 
 ---
 
@@ -133,34 +134,34 @@ Breakpoint 1, main () at main.c:66
 ## 6. Instrucciones para compilar, ejecutar y utilizar  
 
 ### Paso 1: Construir contenedor Docker  
-
+```bash
 chmod +x run.sh
 ./run.sh
+```
 
-### Paso 2: Compilar el proyecto dentro del contenedor
-
+### Paso 2: Compilar el proyecto dentro del contenedor  
+```bash
 cd /home/rvqemu-dev/workspace/tea-project
 ./build.sh
+```
 
-### Paso 3: Ejecutar en QEMU (ver salida UART en la terminal)
-
+### Paso 3: Ejecutar en QEMU (ver salida UART en la terminal)  
+```bash
 ./run-qemu.sh
+```
 
-### Paso 4: Depurar con GDB
-
+### Paso 4: Depurar con GDB  
 En otra terminal:
-
+```bash
 docker exec -it rvqemu /bin/bash
 cd /home/rvqemu-dev/workspace/tea-project
 gdb-multiarch tea.elf
+```
 
-### Paso 5: Conectar al servidor GDB:
-
+### Paso 5: Conectar al servidor GDB  
+```gdb
 target remote :1234
 break main  
 continue
-s
-continue
+```
 
-
-###
