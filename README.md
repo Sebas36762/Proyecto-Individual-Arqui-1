@@ -149,11 +149,12 @@ cd /home/rvqemu-dev/workspace/tea-project
 ### Paso 4: Depurar con GDB
 
 En otra terminal:
+
 docker exec -it rvqemu /bin/bash
 cd /home/rvqemu-dev/workspace/tea-project
 gdb-multiarch tea.elf
 
-### Paso 5Conectar al servidor GDB:
+### Paso 5: Conectar al servidor GDB:
 
 target remote :1234
 break main  
