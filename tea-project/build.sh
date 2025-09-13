@@ -50,7 +50,7 @@ riscv64-unknown-elf-gcc \
     -g3 \
     -gdwarf-4 \
     -c "$STARTUP_SRC" -o startup.o
-
+    
 if [ $? -ne 0 ]; then
     echo "Startup assembly compilation failed"
     exit 1

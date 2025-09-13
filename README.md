@@ -1,111 +1,162 @@
-# Entorno de desarrollo RISC-V con QEMU y GDB
+# Implementación del algoritmo TEA en RISC-V con UART, QEMU y GDB  
 
-Este proyecto proporciona un entorno completo para desarrollo y depuración de programas bare-metal en arquitectura RISC-V de 32 bits, utilizando QEMU y GDB dentro de un contenedor Docker.
+Este proyecto implementa el **Tiny Encryption Algorithm (TEA)** en un entorno **bare-metal RISC-V de 32 bits**, combinando código en C y ensamblador. La salida de resultados se muestra a través del **UART emulado por QEMU** y se brinda soporte de depuración con **GDB**.  
 
 ---
 
-## 1. Estructura del proyecto
-
-```
+## 1. Estructura del proyecto  
 .
 ├── Dockerfile
 ├── run.sh
-├── examples/           # Ejemplos de código
-│   ├── asm-only/      # Ejemplo de ensamblador puro
-│   │   ├── test.s
-│   │   ├── linker.ld
-│   │   ├── build.sh
-│   │   └── run-qemu.sh
-│   └── c-asm/         # Ejemplo de C + ensamblador
-│       ├── example.c
-│       ├── math_asm.s
-│       ├── linker.ld
-│       ├── build.sh
-│       └── run-qemu.sh
-└── README.md
-```
+├── tea-project/
+│ ├── build.sh # Script de compilación
+│ ├── run-qemu.sh # Script para ejecutar en QEMU con GDB
+│ ├── linker.ld # Script de linkeo
+│ ├── startup.s # Inicio y configuración mínima del stack
+│ ├── main.c # Lógica principal en C
+│ ├── uart.c # Implementación de UART
+│ ├── uart.h # Encabezado de UART
+│ ├── tea_encrypt.s # Cifrado TEA en ensamblador
+│ ├── tea_decrypt.s # Descifrado TEA en ensamblador
+│ └── README.md # Documentación
 
-- `examples/` contiene diferentes ejemplos de programas RISC-V
-- `Dockerfile` define la imagen que incluye el emulador QEMU y el toolchain RISC-V
-- `run.sh` automatiza la construcción de la imagen y la ejecución del contenedor
-
-## Ejemplos disponibles
-
-### Ensamblador puro (`examples/asm-only/`)
-Programa simple escrito completamente en ensamblador que calcula la suma del 1 al 10.
-
-### C + Ensamblador (`examples/c-asm/`)
-Programa en C que llama funciones escritas en ensamblador, demostrando la integración entre ambos lenguajes. Este ejemplo incluye un archivo de inicio (startup.s) que inicializa la pila y llama a la función main de C, ya que los programas C necesitan un entorno de ejecución básico antes de ejecutar el código principal.
+- **`main.c`**: lógica de pruebas, bloques, padding, llamadas a TEA.  
+- **`uart.c / uart.h`**: comunicación con UART.  
+- **`tea_encrypt.s` y `tea_decrypt.s`**: implementación del algoritmo en ensamblador.  
+- **`startup.s`**: inicialización mínima antes de entrar a `main`.  
+- **`build.sh`**: compila el proyecto.  
+- **`run-qemu.sh`**: ejecuta QEMU en modo nographic con GDB.  
 
 ---
 
-## 2. Inicio rápido
+## 2. Descripción de la arquitectura del software  
 
-### Paso 1: Construir el contenedor
-```bash
+El software se organiza en dos capas:  
+
+- **C (alto nivel):**  
+  - Manejo de bloques, padding, pruebas y salida por UART.  
+  - Llamadas a las funciones de cifrado/descifrado en ensamblador.  
+
+- **Ensamblador (bajo nivel):**  
+  - Implementación eficiente del TEA (cifrado/descifrado).  
+  - Rutinas independientes de la lógica de pruebas.  
+
+**Interfaz utilizada:**  
+- `tea_encrypt_asm(uint32_t v[2], const uint32_t key[4])`  
+- `tea_decrypt_asm(uint32_t v[2], const uint32_t key[4])`  
+
+**Justificación de diseño:**  
+- C controla pruebas y mensajes.  
+- Ensamblador se encarga de cálculos críticos (TEA).  
+- UART en C para mayor simplicidad en depuración.  
+
+---
+
+## 3. Explicación de las funcionalidades implementadas  
+
+- **Cifrado TEA** de 64 bits con clave de 128 bits (32 rondas).  
+- **Descifrado TEA** que recupera el mensaje original.  
+- **Padding automático** al dividir en bloques de 8 bytes.  
+- **Impresión UART** de:  
+  - Bloques originales  
+  - Bloques cifrados  
+  - Bloques descifrados  
+  - Mensaje final en ASCII  
+- **Pruebas incluidas:**  
+  - **Prueba 1:** mensaje de 1 bloque (`"HOLA1234"`).  
+  - **Prueba 2:** mensaje de múltiples bloques (`"Mensaje de prueba para TEA"`).  
+
+---
+
+## 4. Evidencias de ejecución en QEMU y GDB  
+
+### Salida UART en QEMU  
+
+==============================
+Prueba 1 - Bloques originales:
+0x484F4C41 0x31323334
+Prueba 1 - Bloques cifrados:
+0x51A905F6 0xCA06B672
+Prueba 1 - Bloques descifrados:
+0x484F4C41 0x31323334
+Prueba 1 - Mensaje final:
+HOLA1234
+==============================
+Prueba 2 - Bloques originales:
+0x4D656E73 0x616A6520
+0x64652070 0x72756562
+0x61207061 0x72612054
+0x45410000 0x00000000
+Prueba 2 - Bloques cifrados:
+0xC3D80575 0xE2F32FAE
+0x99DB75B2 0x33060D9A
+0xD85D7207 0x90D13787
+0x06FB60BB 0x5C1F21D5
+Prueba 2 - Bloques descifrados:
+0x4D656E73 0x616A6520
+0x64652070 0x72756562
+0x61207061 0x72612054
+0x45410000 0x00000000
+Prueba 2 - Mensaje final:
+Mensaje de prueba para TEA
+
+### Sesión de GDB  
+
+$ gdb-multiarch tea.elf
+(gdb) target remote :1234
+Remote debugging using :1234
+0x00001000 in ?? ()
+(gdb) break main
+Breakpoint 1 at 0x8000047c: file main.c, line 66.
+(gdb) continue
+Continuing.
+
+Breakpoint 1, main () at main.c:66
+66 uart_init();
+(gdb) layout asm
+(gdb) info registers
+
+---
+
+## 5. Discusión de resultados  
+
+- El descifrado reproduce exactamente los bloques originales.  
+- Los mensajes finales (`HOLA1234` y `"Mensaje de prueba para TEA"`) confirman la correcta implementación.  
+- La salida UART es clara y sirve como evidencia directa.  
+- GDB permite depuración paso a paso para verificar registros e instrucciones.  
+
+---
+
+## 6. Instrucciones para compilar, ejecutar y utilizar  
+
+### Paso 1: Construir contenedor Docker  
+
 chmod +x run.sh
 ./run.sh
-```
 
-### Paso 2: Elegir y compilar un ejemplo
-```bash
-# Para el ejemplo de ensamblador puro
-cd /home/rvqemu-dev/workspace/examples/asm-only
+### Paso 2: Compilar el proyecto dentro del contenedor
+
+cd /home/rvqemu-dev/workspace/tea-project
 ./build.sh
 
-# Para el ejemplo de C + ensamblador
-cd /home/rvqemu-dev/workspace/examples/c-asm
-./build.sh
-```
+### Paso 3: Ejecutar en QEMU (ver salida UART en la terminal)
 
-### Paso 3: Ejecutar con QEMU y depurar
-```bash
-# En una terminal: iniciar QEMU con servidor GDB
 ./run-qemu.sh
 
-# En otra terminal: conectar GDB
+### Paso 4: Depurar con GDB
+
+En otra terminal:
 docker exec -it rvqemu /bin/bash
-cd /home/rvqemu-dev/workspace/examples/[ejemplo-elegido]
-gdb-multiarch [archivo-elf]
-```
+cd /home/rvqemu-dev/workspace/tea-project
+gdb-multiarch tea.elf
 
----
+### Paso 5Conectar al servidor GDB:
 
-## 3. Uso detallado
+target remote :1234
+break main  
+continue
+s
+continue
 
-### Construcción del contenedor
-El script `run.sh` construye la imagen `rvqemu` y crea un contenedor interactivo que monta el directorio del proyecto en `/home/rvqemu-dev/workspace`.
 
-### Compilación
-Cada ejemplo incluye un script `build.sh` que maneja la compilación automáticamente.
-
-**Opciones de compilación utilizadas**:
-- `-march=rv32im`: arquitectura RISC-V 32 bits con extensiones I y M
-- `-mabi=ilp32`: ABI ILP32
-- `-nostdlib -ffreestanding`: entorno bare-metal
-- `-g`: información de depuración para GDB
-
-### Ejecución y depuración
-1. **QEMU**: `run-qemu.sh` inicia QEMU con servidor GDB en puerto 1234
-2. **GDB**: Conectar desde otra terminal para depuración interactiva
-
-**Comandos útiles de GDB**:
-```gdb
-target remote :1234    # Conectar al servidor GDB
-break _start           # Punto de ruptura al inicio
-continue               # Continuar ejecución
-layout asm             # Vista de ensamblador
-layout regs            # Vista de registros
-step                   # Ejecutar siguiente instrucción
-info registers         # Mostrar registros
-monitor quit           # Finalizar sesión
-```
-
----
-
-## 4. Detalles de los ejemplos
-
-Para información específica sobre cada ejemplo, consultar:
-- [`examples/asm-only/README.md`](examples/asm-only/README.md) - Ensamblador puro
-- [`examples/c-asm/README.md`](examples/c-asm/README.md) - C + Ensamblador
-- [`examples/README.md`](examples/README.md) - Información general
+###
