@@ -9,6 +9,15 @@ void tea_decrypt_asm(uint32_t v[2], const uint32_t key[4]);
 #define MAX_BLOCKS 16
 uint32_t blocks[MAX_BLOCKS*2]; // cada bloque = 2 palabras (64 bits)
 
+/**
+ * Función que:
+ *  - Convierte un mensaje ASCII en bloques de 64 bits.
+ *  - Aplica padding si la longitud no es múltiplo de 8 (se rellenan bytes con ceros).
+ *  - Cifra con TEA en ASM.
+ *  - Imprime los bloques cifrados y descifrados.
+ *  - Reconstruye y muestra el mensaje final en ASCII.
+ */
+
 void encrypt_decrypt_print(uint8_t *msg, int len, uint32_t key[4], const char* label) {
     int num_blocks = (len + 7) / 8; // padding
 
