@@ -75,12 +75,12 @@ void encrypt_decrypt_print(uint8_t *msg, int len, uint32_t key[4], const char* l
 int main() {
     uart_init();
 
-    // Prueba 1 - Bloque único
+    // Prueba 1 - Bloque único no padding
     uint8_t message1[] = "HOLA1234";
     uint32_t key1[4]  = {0x12345678, 0x9ABCDEF0, 0xFEDCBA98, 0x76543210};
     encrypt_decrypt_print(message1, sizeof(message1)-1, key1, "Prueba 1");
 
-    // Prueba 2 - Múltiples bloques
+    // Prueba 2 - Múltiples bloques con padding
     uint8_t message2[] = "Mensaje de prueba para TEA";
     uint32_t key2[4]  = {0x0F1E2D3C, 0x4B5A6978, 0x8796A5B4, 0xC3D2E1F0};
     encrypt_decrypt_print(message2, sizeof(message2)-1, key2, "Prueba 2");
