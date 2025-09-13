@@ -5,6 +5,7 @@ Este proyecto implementa el **Tiny Encryption Algorithm (TEA)** en un entorno **
 ---
 
 ## 1. Estructura del proyecto  
+```
 .
 ├── Dockerfile
 ├── run.sh
@@ -19,6 +20,8 @@ Este proyecto implementa el **Tiny Encryption Algorithm (TEA)** en un entorno **
 │ ├── tea_encrypt.s # Cifrado TEA en ensamblador
 │ ├── tea_decrypt.s # Descifrado TEA en ensamblador
 │ └── README.md # Documentación
+
+```
 
 - **`main.c`**: lógica de pruebas, bloques, padding, llamadas a TEA.  
 - **`uart.c / uart.h`**: comunicación con UART.  
